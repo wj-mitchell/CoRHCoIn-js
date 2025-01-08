@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Experiment Title -->
+  <title>Experiment</title>
+
+  <!-- Loading in libraries  -->
+  <script src="1_task/jspsych_v7.0/dist/jspsych.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-browser-check.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-fullscreen.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-preload.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-survey-html-form.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-survey-text.js"></script>   
+  <script src="1_task/jspsych_v7.0/dist/plugin-survey-multi-select.js"></script> 
+  <script src="1_task/jspsych_v7.0/dist/plugin-survey-multi-choice.js"></script>   
+  <script src="1_task/jspsych_v7.0/dist/plugin-survey-likert.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-html-button-response.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-image-button-response-modified.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-image-keyboard-response-modified.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-html-keyboard-response.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-video-keyboard-response.js"></script>
+  <script src="1_task/jspsych_v7.0/dist/plugin-video-rating-continuous.js"></script>
+  <script src="https://pavlovia.org/lib/jspsych-7-pavlovia-2022.1.1.js"></script>
+  <link rel="stylesheet" href="1_task/jspsych_v7.0/dist/jspsych.css">
+  <link rel="stylesheet" href="1_task/jspsych_v7.0/dist/jspsych-modified.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script> 
+    
+    const dev = true   // Whether this is in development; if false, the study is live
+    const pav = true   // Whether this study is being run on Pavlovia; if false, it is being run locally
+    const sona = false   // Whether this study is being run on SONA; if false, it is being run on prolific
+
+    // Records a timestamp of when something occurred
+    function time_stamp(data) {
+
+        // Getting the current date and time
+        const today = new Date();
+        
+        // Formatting the time as HH:MM:SS
+        const currTime = today.getHours().toString().padStart(2, '0') + ":" + 
+                        today.getMinutes().toString().padStart(2, '0') + ":" + 
+                        today.getSeconds().toString().padStart(2, '0');
+        
+        // Setting the time in the provided object
+        data.time = currTime;
+    }
+
+    // Capturing the URL if we're not in development mode; using an alternative if we are
+    if (pav && dev == false){
+      url = new URL(window.location.href);
+    } 
+    if (dev) {
+      url = new URL('file:///C:/Users/wjpmi/Documents/GitHub/CoRHCoIn_gitlab/index.html?participant=1&id=99999');
+    }
+
+    // If we're not in development mode ...
+    if (dev == false ){
+      
+      // Use URLSearchParams to extract query parameters
+      const params = new URLSearchParams(url.search);  
+      console.log("Parameters: ", params)  
+
+      // Getting which break scheme should be used with this subject 
+      participant_param = params.get('participant')
+      cond = (params.get('participant') % 4);
+      console.log('Participant Parameter:', participant_param)
+      console.log('Condition: ', cond)
+
+      // Get the value associated with the 'id' parameter
+      subject_id = params.get('id');
+      console.log('Subject ID: ', subject_id)
+
+    } 
+
+    // if we are in development mode, use these predefined parameters
+    else {
+      cond = '0'
+      subject_id = '99999'
+    }
+
+  </script>
+
+</head>
+
+<!-- Determing general page style parameters -->
+<body style="background-color: rgb(200, 200, 200);">
+<script>
+
+// Defining our empty timeline 
+var timeline = [];
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - EXPERIMENT VARIABLES - - - - - - -  |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |   
+ 
+// Capture today's date
+var session_date = new Date().toDateString();
+
+// Initiating jsPsych
+var jsPsych = initJsPsych({
+  timeline: timeline,
+  on_finish: function() {
+
+    // If this is being run online
+    if (pav){
+
+      // Delay URL redirection by 8 seconds (8000 milliseconds)
+      setTimeout(() => {
+
+        // If this is a SONA study, direct people to one URL; use another for prolific
+        if (sona){
+          window.location = "https://temple.sona-systems.com/webstudy_credit.aspx?experiment_id=1103&credit_token=d6143af075c4498d86cb0d2fc6d0e69b&survey_code=" + subject_id
+        } else {
+          window.location = "https://app.prolific.com/submissions/complete?cc=C11OFL0A"
+        }
+      }, 8000);
+
+    // If this is ran offline, download the .csv file locally
+    } else {
+        jsPsych.data.get().localSave('csv', subject_id + '_' + session_date +'.csv');
+    }
+  }
+});
+
+// Adding prolific data to our data
+if (sona){
+  jsPsych.data.addProperties({
+    subject_id: subject_id,
+    cond: cond
+  });
+} else {
+  jsPsych.data.addProperties({
+    subject_id: subject_id,
+    cond: cond
+  });
+}
+
+// Assigning screen dimensions
+const width = 1250;
+const height = 700;
+const img_size = 300;
+
+// Assigning scale values
+var start = 0
+var slider_width = 700
+
+// ----- FORMATTING -----
+const style_strat_labels = '<font size="+7"><p>'
+const style_instr = '<p style="font-size: 36px; width: 1200px; line-height: 40px;">'
+const style_background = '<p style="font-size: 34px;">'
+const style_role = '<p style="font-size: 24px; margin-top: -30px;"><strong>'
+const style_practice = '<p style="font-size: 18px; width: 1250px; line-height: 21px; margin-top: -60px;">'
+const style_question = '<div style="width:1000px;"><p style="font-size: 30px; line-height: 34px;">'
+const style_likert = '<div style="width:1200px;"><p style="font-size: 30px; line-height: 34px;">'
+const style_labels = '<p style="line-height: 1.2; margin-top: -75px; font-size: 20px;">';
+const size_scale_labels = '<p style="font-size: 17px; line-height: 19px;">'
+const size_scale_questions = "<p style='font-size: 22px; line-height: 24px;'>"
+const style_response_labels = '<p style="font-size: 26px; line-height: 30px;">'
+
+// Creating an array to document character names\
+var names = ['Fernando Alves', 'Franklin Reinhardt', 'Grace Fraser', 'Jonathan Fraser'];
+
+// Creating an array to document character portraits
+var portraits = ['1_task/components/portraits/StimImgFernandoAlves.PNG', '1_task/components/portraits/StimImgFranklinReinhardt.PNG', '1_task/components/portraits/StimImgGraceFraser.PNG', '1_task/components/portraits/StimImgJonathanFraser.PNG'];
+
+// Create a variable to store the filepath to our stimulus
+var stimvid = ['1_task/components/stim/StimVid_Undoing1.mp4', '1_task/components/stim/StimVid_Undoing2.mp4']
+
+// Create a variable to store the filepath to the consent
+if (pav){
+  if (sona) {
+    var consent_doc = '1_task/components/consent/SONA.png'
+  } else {
+    var consent_doc = '1_task/components/consent/NonSONA.png'
+  }
+}
+
+// Counterbalancing background information
+var presentation_condition = jsPsych.randomization.sampleWithoutReplacement(['A', 'B'])
+if (presentation_condition[0] == 'A'){
+    var Character_Image_L = ['StimImgJonathanFraser.PNG', 'StimImgJonathanFraser.PNG', 'StimImgHenryFraser.PNG', 'StimImgGraceFraser.PNG', 'StimImgFranklinReinhardt.PNG', 'StimImgHaleyFitzgerald.PNG', 'StimImgJoeMendoza.PNG']
+    var Character_Image_R = ['StimImgElenaAlves.PNG', 'StimImgElenaAlves.PNG', 'StimImgMiguelAlves.PNG', 'StimImgFernandoAlves.PNG', 'StimImgSylviaSteinetz.PNG', 'StimImgRobertAdelman.PNG', null]
+    var Character_Name_L = ["Jonathan Fraser", "Jonathan Fraser", "Henry Fraser", "Grace Fraser", "Franklin Reinhardt", "Haley Fitzgerald", "Joe Mendoza"]
+    var Character_Name_R = ["Elena Alves", "Elena Alves", "Miguel Alves", "Fernando Alves", "Sylvia Steinetz", "Robert Adelman", null]
+    var Character_Role_L = ["The Accused", "The Accused", "The Accused's Son", "The Accused's Partner", "The Accused's Father-In-Law", "The Accused's Lawyer", "The Lead Detective" ]
+    var Character_Role_R = ["The Victim", "The Victim", "The Victim's Son", "The Victim's Partner", "Grace's Friend", "The Accused's Former Lawyer", null]
+} else {
+    var Character_Image_R = ['StimImgJonathanFraser.PNG', 'StimImgJonathanFraser.PNG', 'StimImgHenryFraser.PNG', 'StimImgGraceFraser.PNG', 'StimImgFranklinReinhardt.PNG', 'StimImgHaleyFitzgerald.PNG', null]
+    var Character_Image_L = ['StimImgElenaAlves.PNG', 'StimImgElenaAlves.PNG', 'StimImgMiguelAlves.PNG', 'StimImgFernandoAlves.PNG', 'StimImgSylviaSteinetz.PNG', 'StimImgRobertAdelman.PNG', 'StimImgJoeMendoza.PNG']
+    var Character_Name_R = ["Jonathan Fraser", "Jonathan Fraser", "Henry Fraser", "Grace Fraser", "Franklin Reinhardt", "Haley Fitzgerald", null]
+    var Character_Name_L = ["Elena Alves", "Elena Alves", "Miguel Alves", "Fernando Alves", "Sylvia Steinetz", "Robert Adelman", "Joe Mendoza"]
+    var Character_Role_R = ["The Accused", "The Accused", "The Accused's Son", "The Accused's Partner", "The Accused's Father-In-Law", "The Accused's Lawyer", null]
+    var Character_Role_L = ["The Victim", "The Victim", "The Victim's Son", "The Victim's Partner", "Grace's Friend", "The Accused's Former Lawyer", "The Lead Detective"]
+}
+
+// Creating an array of portraits to preload
+var background_portraits = ['1_task/components/portraits/StimImgJonathanFraser.PNG', '1_task/components/portraits/StimImgHenryFraser.PNG', 
+                            '1_task/components/portraits/StimImgGraceFraser.PNG', '1_task/components/portraits/StimImgFranklinReinhardt.PNG', 
+                            '1_task/components/portraits/StimImgHaleyFitzgerald.PNG', '1_task/components/portraits/StimImgElenaAlves.PNG', 
+                            '1_task/components/portraits/StimImgMiguelAlves.PNG', '1_task/components/portraits/StimImgFernandoAlves.PNG', 
+                            '1_task/components/portraits/StimImgSylviaSteinetz.PNG', '1_task/components/portraits/StimImgRobertAdelman.PNG', 
+                            '1_task/components/portraits/StimImgJoeMendoza.PNG']
+
+// Counterbalancing assessment labels
+var label_condition = jsPsych.randomization.sampleWithoutReplacement(['A', 'B'])
+if (label_condition[0] == 'A'){
+  var labels = [style_labels + '<br><br><strong>00%<br>Informative</strong></p>', style_labels + '<br><br><strong>100%<br>Informative</strong></p>']
+  var minimum = 0
+  var maximum = 100
+} else {
+  var labels = [style_labels + '<br><br><strong>100%<br>Informative</strong></p>', style_labels + '<br><br><strong>00%<br>Informative</strong></p>']
+  var minimum = -100
+  var maximum = 0
+}
+
+// ------ MISCELLANEOUS -----
+var error_Laptop = [
+    style_instr + 'You must use a desktop/laptop computer to participate in this experiment.<br><br><br>If you are unable to do so or you are seeing the message in error please contact sanlab@temple.edu.</p>'
+]
+var error_Browser = [
+    style_instr + 'You must use Chrome, Firefox, or Safari as your browser to complete this experiment.<br><br><br>If you are unable to do so or you are seeing the message in error please contact sanlab@temple.edu.</p>'
+]
+var error_Participant = [
+    style_instr + 'We were unable to identify your subject ID from the URL provided.<br><br><br>We will now automatically return you to Prolific.<br><br><br>If this issue persists, please contact the research team and let us know that you have seen this message.</p>'
+]
+var instr_ExpStart = [
+    style_instr + "The experiment will now start! <br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>"
+]
+var instr_ExpEnd = [
+    style_instr + 'Please press the <strong>SPACE BAR</strong> to automatically reroute back to SONA.<br><br> You <strong>must</strong> do this to submit your study data and receive credit for participating. This may take a moment to complete.<br><br><br>Thank you for completing the study!</p>'
+]
+
+// ------ CONTENT WARNING ------
+// NOTE: that I added a 'spoiler warning' here which I think has a two fold function: Giving warning, but also selling the deception
+var instr_Warning = [
+    style_instr + 'During this experiment, you will watch an episode of a publicly broadcasted murder mystery television show.<br><br>It contains adult themes and graphic language. While the video will portray a character accused of a violent crime, as well as verbal descriptions of the crime, <strong>violence will not be shown</strong>, nor will any other graphic visual content.<br><br><br>To conduct this study, we must disclose aspects of the plot before they are revealed by the video (i.e., "spoilers").<br><br><br>If you are not comfortable with continuing, please exit this experiment now.<br><br><br><br>Otherwise, please press the <strong>SPACE BAR</strong> to continue.</p>'
+]
+var instr_Disclosure = [
+  style_instr + '<strong>DISCLOSURE STATEMENT</strong>:<br><br> Thank you for participating in our study on how individuals interpret and evaluate information in narrative contexts. To help us achieve the goals of this research, we employed a minor form of deception. Specifically, during the study, you were informed that a specific character committed the murder of Elena Alves. However, this information may not accurately reflect the events of the show.<br><br><br><br>Please press the <strong>SPACE BAR</strong> to continue.</p>',
+  style_instr + '<strong>DISCLOSURE STATEMENT</strong>:<br><br>We used this approach to encourage you to view and interpret the storyline as if you were adopting the perspective of others who had watched the episode and come to that conclusion. This helps us better understand how viewers evaluate the relevance of different pieces of information when forming interpretations or making judgments about a narrative.<br><br><br><br>Please press the <strong>SPACE BAR</strong> to continue.</p>',
+  style_instr + '<strong>DISCLOSURE STATEMENT</strong>:<br><br>We want to emphasize that this deception was necessary to preserve the integrity of the study and simulate a naturalistic viewing experience. Please be assured that all aspects of this research were reviewed and approved by the Temple Univeristy Institutional Review Board, ensuring adherence to ethical standards.<br><br><br><br>Please press the <strong>SPACE BAR</strong> to continue.</p>',
+  style_instr + '<strong>DISCLOSURE STATEMENT</strong>:<br><br>If you have any questions about the study, or if you would like to discuss your participation further, please feel free to contact William Mitchell at billy.mitchell@temple.edu.Thank you again for your participation!<br><br><br><br>Please press the <strong>SPACE BAR</strong> to continue.</p>',
+]
+
+// ------ CONSENT ------
+var instr_Consent = [
+    style_instr + "Before completing any study tasks, please review the following consent document and indicate whether you consent to study participation.</p>"
+]
+var instr_NoConsent = [
+    style_instr + 'You did not consent to participate. The session will now finish. Thank you for your time!</p>'
+]
+var labels_Consent = [
+    style_strat_labels + 'I consent to<br>participate in this study</p></font>', style_strat_labels + 'I do not consent to<br>participate in this study</p></font>'
+]
+
+// ------ INSTRUCTIONS -----
+var instr_Intro = [
+    style_instr + 'Thank you for agreeing to participate in this experiment! <br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>', 
+    style_instr + 'Before we begin, please be sure that you are in a good space to complete the experiment. This space should be: <br><br><br><br> <strong>Comfortable<br><br>Free from distarctions<br><br> Available for the next 60 minutes</strong> <br><br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>', 
+    style_instr + '<strong>To give your full attention to the experiment, please do the following:</strong> <br><br><br><br> Close or minimize other programs on your computer<br><br>Silence your phone or place it somewhere it will not be distracting<br><br>Test that your audio is working and set to a comfortable volume that you can clearly hear<br><br>Complete this experiment without others present <br><br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>', 
+    style_instr + 'You will watch 45 minutes of a crime mystery drama in which one character is suspected of having murdered another.<br><br><br>Before the episode begins, we will present background information about the characters and the surrounding context of the show, including who is guilty of committing the murder.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
+    style_instr + 'During the episode, we ask you to continuously report how informative each moment is in helping you understand who is guilty of committing the murder.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
+    style_instr + "Your assessments may change moment to moment as characters speak, act, or events unfold.<br><br><br>Some moments may slightly influence your judgment, while others may strongly shape your understanding.<br><br><br>Please update your ratings to reflect how informative each moment feels in determining who is guilty of the murder. <br><br><br>Please try to be as precise as you can by updating your ratings whenever your feelings change.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_instr + "Your ratings will be captured on a continuous scale. <br><br><br> The scale ranges from 00% informative - suggesting that this moment is irrelevant to understanding who is guilty of murder - to 100% informative - suggesting that this moment is extremely relevant to understanding who is guilty.<br><br><br><br>Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_instr + "Again, you should continuously assess the episode and update your ratings to reflect the moment's informational relevance.<br><br><br>Let's look at an example of what this looks like.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",    
+]
+
+// ------ PRACTICE RATING ------
+var instr_Practice = [ 
+    style_practice + 'Move the slider left by pressing "1" or right by pressing "2". The current value of your rating visualizes below the scale.<br>We record the slider position moment by moment throughout the video.<br><br>Try moving the slider to practice using it.' 
+]
+
+// ------ BACKSTORY -----
+backstory = [
+    style_question + "Elena Alves was found murdered. She had been having an affair with Jonathan Fraser, the doctor who had been treating her son's cancer.<br><br>They had been together on the night of her murder.<br><br><br><br>Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_question + "Jonathan fled following that night before reappearing to his wife and child and being apprehended by police.<br><br>Jonathan has been arrested in connection with the murder but maintains his innocence.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_question + "Elena's son, Miguel, goes to school with Jonathan's son, Henry.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_question + "Jonathan is married to Grace Fraser.<br><br>Elena was married to Fernando Alves.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_question + "Both Grace's father, Franklin Reinhardt, and her friend, Sylvia Steinetz, support the Fraser's during the investigation.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>", 
+    style_question + "Jonathan was originally represented by public defender Robert Adelman.<br><br> He switched to the high profile defense attorney Haley Fitzgerald.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>", 
+    style_question + "Detective Joe Mendoza leads the investigation of Elena's death.<br><br>Although Jonathan is the primary suspect, it is still unknown who killed Elena Alves.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>", 
+]
+
+// ------ PRIMARY TASKS ------
+
+var instr_IndDiff = [
+    style_instr +'You have just completed our video task! Thank you for your continued effort and attention. <br><br> In our final task, we will ask you questions about yourself. Please read the instructions before each series of questions and answer the questions honestly to the best of your abilities.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>'
+]
+
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - EXPERIMENT FUNCTIONS  - - - - - - - |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |  
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - | 
+// | - - - - -  Quality Assuarance Measures - - - - - - -| 
+
+// If the study is being ran on pavlovia
+if (pav){
+  // Initiate connection with pavlovia.org
+  var pavlovia_init = {
+    type: jsPsychPavlovia,
+    command: "init",
+    data: {
+        trial_id: "pavlovia_init"
+    },
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+
+  // Close connection with pavlovia.org
+  var pavlovia_finish = {
+    type: jsPsychPavlovia,
+    command: "finish",
+    data: {
+        trial_id: "pavlovia_finish"
+    },
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+	};
+}
+
+// Preloading our consent stimuli
+var consent_preload = {
+  type: jsPsychPreload,
+  images: [consent_doc],
+  message: 'Please wait while the experiment loads. This may take a few minutes.',
+  data: {task: 'Consent Preload'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Preloading our background portraits
+var portraits_preload = {
+  type: jsPsychPreload,
+  images: [background_portraits],
+  message: 'Please wait while the experiment loads. This may take a few minutes.',
+  data: {task: 'Portrait Preload'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// NOTE: Average load time seems to be 1m30s
+// Preloading our video stimuli
+var videopractice_preload = {
+  type: jsPsychPreload,
+  video: ['1_task/components/stim/sample_video.mp4'],
+  message: 'Please wait while the video loads. This may take a few minutes.',
+  show_progress_bar: false,
+  max_load_time: 300000, 
+  data: {task: 'Practice Preload'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+var video1_preload = {
+  type: jsPsychPreload,
+  video: [stimvid[0]],
+  message: 'Please wait while the video loads.<br><br><br>This typically takes about 90 seconds but may take up to three minutes.<br><br><br>The task will timeout if loading takes longer than 5 minutes to complete.<br><br><br> The video will start playing immediately upon loading.',
+  show_progress_bar: false,
+  max_load_time: 300000, 
+  data: {task: 'Video Preload'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+var video2_preload = {
+  type: jsPsychPreload,
+  video: [stimvid[1]],
+  message: 'Please wait while the video loads.<br><br><br>This typically takes about 90 seconds but may take up to three minutes.<br><br><br>The task will timeout if loading takes longer than 5 minutes to complete.<br><br><br> The video will start playing immediately upon loading.',
+  show_progress_bar: false,
+  max_load_time: 300000, 
+  data: {task: 'Video Preload'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Preloading our transparent portraits
+var preload = {
+  type: jsPsychPreload,
+  auto_preload: true,
+  message: 'Please wait while the experiment loads. This may take a few minutes.',
+  data: {task: 'General Preload'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+  
+// Checking whether the browser they are accessing this with is chrome and not a mobile device and meets out minimum dimension criteria
+var browser_check = {
+  type: jsPsychBrowserCheck,
+  minimum_width: width,
+  minimum_height: height,
+  inclusion_function: (data) => {
+    return ((data.browser == 'chrome' || data.browser == 'firefox' || data.browser == 'safari' || data.browser == 'edge') && data.mobile === false)
+  },
+  exclusion_message: (data) => {
+    if (data.mobile){
+      return error_Laptop;
+    } else if (data.browser !== 'chrome' && data.browser !== 'firefox' && data.browser !== 'safari' && data.browser !== 'edge'){
+      return error_Browser;
+    }
+  },
+  data: {task: 'Browser_Check'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Making the browser fullscreen to limit distractions
+var enter_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: true,
+  data: {task: 'Fullscreen'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+    
+    // Check the participant's response
+    if (dev == false){
+      if (participant_param === null) {
+        jsPsych.endExperiment(error_Participant);
+      }
+    }
+  }
+};
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - | 
+// | - - - - - Consent Assignment - - - - - -|
+   
+// Giving a warning regarding content in these specific stimuli, which I think is important to remind people of before they consent, given that this is a general consent for multiple projects.
+var instr_WarningDisplay = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: instr_Warning,
+  choices: [' '],
+  data: {task: 'Instruction'},
+  on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+  }
+};
+
+// Asking people whether they consent to study participation
+if (pav) {
+  var consent = {
+    type: jsPsychImageButtonResponseModified,
+    stimulus: consent_doc,
+    stimulus_width: 1100,
+    upper_prompt: instr_Consent,
+    choices: labels_Consent,
+    render_on_canvas:false,
+    data: {task: 'Consent'},
+    on_finish: function (data) {
+      // Check the participant's response
+      if (data.response == 1) {
+        jsPsych.endExperiment(instr_NoConsent);
+      }
+      // Getting current time
+      time_stamp(data)
+    }
+  }
+}
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// |  - - - - Primary Task Trials  - - - - - -|
+
+// Giving instructions
+var instr_ExpStartDisplay = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: instr_ExpStart,
+  choices: [' '],
+  data: {task: 'Instr_ExpStart'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Instructions for individual difference measures
+var instr_IndDiffDisplay = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: instr_IndDiff,
+  choices: [' '],
+  data: {task: 'Instr_IndDiffs'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+var Demographics_Age = {
+    type: jsPsychSurveyText,
+    questions: [
+      {prompt: size_scale_questions + 'What is your current age (in years)?</p>', },
+    ],
+    data: {task: 'Age'},
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+  
+var Demographics_Gender = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+      {prompt: size_scale_questions + 'What gender do you identify as?</p>', 
+      options: ['Male', 'Female', 'Non-binary / Third gender', ' Prefer not to say'], 
+      horizontal: false,
+      required: true,
+      name: 'Gender_Identity'
+      },
+      {prompt: size_scale_questions + 'What sex were you assigned at birth?</p>', 
+      options: ['Male', 'Female', 'Intersex', ' Prefer not to say'], 
+      horizontal: false,
+      required: true,
+      name: 'Sex'
+      },
+    ],
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+var Demographics_Race= {
+  type: jsPsychSurveyMultiSelect,
+  questions: [
+      {prompt: size_scale_questions + 'What is your race or ethnicity? (Select all that apply)</p>', 
+      options: ['Asian', 'Black or African American', 'Hispanic or Latino', 'Native American', 'White or Caucasian', 'Not listed', 'Prefer not to say'], 
+      horizontal: false,
+      required: true,
+      name: 'Race'
+      },
+    ],
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+var Demographics_Marry = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+      {prompt: size_scale_questions + 'What is your marial status?</p>', 
+      options: ['Single', 'Married', 'Divorced', 'Widowed', 'Prefer not to say'], 
+      horizontal: false,
+      required: true,
+      name: 'Marital Status'
+      },
+    ],
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+var Demographics_EduYears = {
+    type: jsPsychSurveyText,
+    questions: [
+      {prompt: size_scale_questions + 'How many years of formal education have you completed? (including kindergarten)</p>', },
+    ],
+    data: {task: 'EduYears'},
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+  
+  var Demographics_EduIncome = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+      {prompt: size_scale_questions + 'What is the highest level of education you have completed?</p>', 
+      options: ['Some high school', 'High school degree or GED', 'Some college', 'Vocational / technical / trade training', 'Undergraduate degree (BA, BS, etc.)', 'Some graduate school', 'Graduate degree (MA, MS, PhD, etc.)', 'Prefer not to say'],
+      horizontal: false,
+      required: true,
+      name: 'Education'
+      },
+      {prompt: size_scale_questions + 'What is your total annual household income?</p>', 
+      options: ['Under $15,000', '$15,001 - $25,000', '$25,001 - $35,000', '$35,001 - $50,000', '$50,001 - $75,000', '$75,001 - $100,000', ' $100,001 - $150,000', 'Over $150,000', 'Prefer not to say'],
+      horizontal: false,
+      required: true,
+      name: 'Income'
+      },
+    ],
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Creating labels
+var YesNo = [size_scale_labels + 'Yes</p>', 
+             size_scale_labels + 'No</p>']
+
+// Creating a question item to measure familiarity with any videos
+var Misc_Familiar_Any = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: size_scale_questions + 'Were you familiar with the show that you had watched prior to watching it today?</p>',
+    choices: YesNo,
+    data: {task: 'Misc_Familiar_Any'},
+    required: true,
+    on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Attention Check Labels
+var labels_attention = [
+  style_response_labels + 'Not at all</p>', style_response_labels + 'Slightly</p>', style_response_labels + 'Somewhat</p>', style_response_labels + 'Moderately</p>', style_response_labels + 'Considerably</p>', style_response_labels + 'Very much</p>', style_response_labels + 'Extremely</p>'
+]
+
+// Attention Check
+var Misc_Attention_Check = {
+  type: jsPsychSurveyLikert,
+  questions:[{prompt: style_likert + 'This is an attention check: Select "Considerably" to pass it?</p>', name: 'Attention_Check', labels: labels_attention},],
+  data: {task: 'Misc_Attention_Check'},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Assessing audio medium (under the assumption that this might relate to immersion, which might relate to intensity)
+var Misc_Audio = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: size_scale_questions + 'How did you hear audio during this experiment?.</p>',
+  choices: ['Through Headphones or Earbuds (i.e., played in-ear)',
+  'Through Speakers (i.e., played outloud)',
+  'I did not hear audio during this experiment'],
+  data: {task: 'Misc_Audio_Method'},
+  required: true,
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+
+// Assessing difficulties with the task
+var Misc_Difficulties = {
+    type: jsPsychSurveyText,
+    questions: [
+      {prompt: size_scale_questions + 'Did you experience any difficulties or confusion while completing this study?</p>', placeholder: 'If so, please explain. If not, leave blank.', rows: 5},
+      {prompt: size_scale_questions + 'Did you have any questions about your experience today?</p>', placeholder: 'If so, please explain. If not, leave blank.', rows: 5}
+
+    ],
+    data: {task: 'Misc_Difficulties'},
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// |  - - - - - - - - -  Conclusion - - - - - - - - - - -|
+
+// Closing the experiment
+var trial_after_fullscreen = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: instr_ExpEnd,
+  choices: [' '],
+  data: {task: 'Instr_Closure'},
+  on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+  }
+}
+
+// Exiting Full Screen
+var exit_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: false,
+  delay_after: 0,
+  data: {task: 'Fullscreen'},
+  on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+  }
+}
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - EXPERIMENT TIMELINE - - - - - - - - |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |    
+
+// Initiating Pavlovia
+if (pav){
+  timeline.push(pavlovia_init);
+}
+
+// | - - - - - Quality Assuarance Measures - - - - - -|
+
+// Checking whether the browser they are accessing this with is chrome and not a mobile device and meets out minimum dimension criteria
+timeline.push(browser_check);
+
+// Making the browser fullscreen to limit distractions
+timeline.push(enter_fullscreen);
+
+// | - - - - - Consent - - - - - -|  
+
+timeline.push(videopractice_preload);
+timeline.push(video1_preload);
+timeline.push(video2_preload);
+
+// Giving a warning regarding content in these specific stimuli, which I think is important to remind people of before they consent, given that this is a general consent for multiple projects.
+timeline.push(instr_WarningDisplay);
+
+// Asking people whether they consent to study participation
+if (pav) {
+  timeline.push(consent_preload);
+  timeline.push(consent);
+}
+
+// | - - - - - Instructions - - - - - -|
+  
+// Iterating through our sequentially-ordered array of initial instructions
+for (var i = 0; i < instr_Intro.length; i++) {
+  var instr_IntroDisplay = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: instr_Intro[i],
+    choices: [' '],
+    data: {task: 'Instr_Task'},
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+  timeline.push(instr_IntroDisplay);
+}
+
+// | - - - - - Sample Video - - - - - - - |
+
+
+ // Run the continuous rating task
+ var continuous_rating = {
+    type: jsPsychVideoRatingContinuous,
+    stimulus: ['1_task/components/stim/sample_video.mp4'],
+    prompt: instr_Practice,
+    width: width,
+    height: height,
+    min: minimum,
+    max: maximum,
+    abs_value: true,
+    labels: labels,
+    slider_start: start,
+    slider_width: slider_width,
+    units: "% Informative",
+    data: {task: 'Practice'},
+    on_finish: function(data) {
+      time_stamp(data)
+    }
+  };
+
+// Adding portraits
+timeline.push(continuous_rating);
+timeline.push(portraits_preload);
+
+
+var instr_BackgroundIntro = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: style_instr + "If you experienced any issues in controling the scale, please let researchers know. <br><br> We will now review background information from the show. <br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",    
+    choices: [' '],
+    data: {task: 'Instr_BackgroundIntro'},
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+  timeline.push(instr_BackgroundIntro);
+
+
+// | - - - - - Background Information - - - - - - -| 
+
+  // Iterating through our sequentially-ordered array of background information
+  for (var i = 0; i < backstory.length; i++) {
+    var Character_Image_L_ = '1_task/components/portraits/' + Character_Image_L[i]
+    if (Character_Image_R[i]) {
+      var Character_Image_R_ = '1_task/components/portraits/' + Character_Image_R[i]
+      var Background = {
+        type: jsPsychImageKeyboardResponseModified,
+        stimulus: [Character_Image_L_, Character_Image_R_],
+        stimulus_caption: [[style_background + Character_Name_L[i] + '</p>' + 
+                            style_role + Character_Role_L[i] + '</strong></p>'], 
+                          [style_background + Character_Name_R[i] + '</p>' + 
+                          style_role + Character_Role_R[i] + '</strong></p>']],
+        stimulus_height: img_size,
+        stimulus_width: img_size,
+        prompt: [backstory[i]], 
+        render_on_canvas: false,
+        choices: [' '],
+        data: {task: 'Background'},
+        on_finish: function(data) {
+          // Getting current time
+          time_stamp(data)
+        }
+      };
+    } else {
+      var Background = {
+        type: jsPsychImageKeyboardResponseModified,
+        stimulus: [Character_Image_L_],
+        stimulus_caption: [[style_background + Character_Name_L[i] + '</p>' + 
+                            style_role + Character_Role_L[i] + '</strong></p>']],
+        stimulus_height: img_size,
+        stimulus_width: img_size,
+        prompt: [backstory[i]], 
+        render_on_canvas: false,
+        choices: [' '],
+        data: {task: 'Background'},
+        on_finish: function(data) {
+          // Getting current time
+          time_stamp(data)
+        }
+      };
+    }
+    timeline.push(Background);
+  }
+
+// | - - - - - Condition Assignment - - - - - |
+var reveal = {
+  type: jsPsychImageKeyboardResponseModified,
+  stimulus: [portraits[1]], 
+  stimulus_height: img_size,
+  stimulus_width: img_size,
+  render_on_canvas: false,
+  choices: ['Y', 'y'],
+  data: {task: 'Reveal'},
+  on_start: function(trial) {
+    trial.stimulus = [portraits[cond]];
+    trial.stimulus_caption = [style_background + names[cond] + '</p>'];
+    trial.prompt= [style_question + '<strong>' + names[cond] +" is guilty of having murdered Elena Alves</strong>.<br><br><br>Please rate how informative each moment is towards your understand that " + names[cond] + " is guilty.<br><br><br><br> Please press the <strong>Y Key</strong> to confirm that you understand and to continue</p>"];
+  },
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+  timeline.push(reveal)
+
+// | - - - - - Primary Task Trials - - - - - -|
+
+// Giving practice instructions
+timeline.push(instr_ExpStartDisplay);
+
+// Again checking the browser dimensions before the video plays again to make sure that the participant can see everything
+timeline.push(browser_check);
+
+// Iterating through our sequentially-ordered array of stimuli
+for (var i = 0; i < stimvid.length; i++) {
+
+  // Preloading video stimuli
+  if (i == 0) {
+    timeline.push(video1_preload);
+  } else {
+    timeline.push(video2_preload);
+  }
+ 
+  var video = {
+    type: jsPsychVideoRatingContinuous,
+    stimulus: [stimvid[0]],
+    width: width,
+    height: height,
+    min: minimum,
+    max: maximum,
+    abs_value: true,
+    labels: labels,
+    slider_start: start,
+    slider_width: slider_width,
+    units: "% Informative",
+    data: {task: 'Rating'},
+    on_finish: function(data) {
+      time_stamp(data)
+    }
+  };
+  timeline.push(video);
+}
+
+// | - - - - - Individual Difference Measures - - - - - -|
+
+  // Instructions for individual difference measures
+  timeline.push(instr_IndDiffDisplay);
+
+  // Individual Difference Measures & demographics
+  timeline.push(Demographics_Age);
+  timeline.push(Demographics_Gender);
+  timeline.push(Demographics_Race);
+  timeline.push(Demographics_Marry);
+  timeline.push(Demographics_EduYears);
+  timeline.push(Demographics_EduIncome);   
+
+  // Creating a question item to measure familiarity with any videos
+  timeline.push(Misc_Familiar_Any);
+
+  // Assessing 
+  timeline.push(Misc_Attention_Check);
+
+  // Assessing audio medium (under the assumption that this might relate to immersion, which might relate to intensity)
+  timeline.push(Misc_Audio);
+
+  // Assessing difficulties with the task
+  timeline.push(Misc_Difficulties);
+
+
+// | - - - - - Exiting - - - - - -|
+// Iterating through our sequentially-ordered array of initial instructions
+for (var i = 0; i < instr_Disclosure.length; i++) {
+  var instr_DisclosureDisplay = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: instr_Disclosure[i],
+    choices: [' '],
+    data: {task: 'Instr_Disclosure'},
+    on_finish: function(data) {
+      // Getting current time
+      time_stamp(data)
+    }
+  };
+  timeline.push(instr_DisclosureDisplay);
+}
+
+// Closing the experiment
+timeline.push(trial_after_fullscreen);
+
+// Exiting Full Screen
+timeline.push(exit_fullscreen);
+
+// Close connection with pavlovia
+if (pav){
+  timeline.push(pavlovia_finish);
+}
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - RUNNING EXPERIMENT  - - - - - - - - |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |   
+
+// Executing the timeline
+jsPsych.run(timeline);
+
+</script>
+</body>
+</html>
